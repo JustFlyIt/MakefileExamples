@@ -1,0 +1,51 @@
+# You must run source /opt/iSpaceOS/2017.2/environment-setup-aarch64-ispace-linux before compiling for the ultrascale+
+
+INC_DIR=/opt/iSpaceOS/2017.2/sysroots/aarch64-ispace-linux/usr/include
+
+LIB_DIR=/opt/iSpaceOS/2017.2/sysroots/aarch64-ispace-linux/usr/lib
+
+
+
+standalone: UVCCameraControl.o Starer.o standalone_test.o
+
+	$(CXX) -Wall -O3 UVCCameraControl.o Starer.o standalone_test.o -o starer_standalone -pthread -L$(LIB_DIR) -Wl,-rpath -Wl,$(LIB_DIR) -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui
+
+	
+
+camera: UVCCameraControl.o camera_test.o
+
+	$(CXX) -Wall -O3 UVCCameraControl.o camera_test.o -o camera_test -L$(LIB_DIR) -Wl,-rpath -Wl,$(LIB_DIR) -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui
+
+
+
+UVCCameraControl.o: UVCCameraControl.h UVCCameraControl.c
+
+	$(CC) -Wall -O3 -c UVCCameraControl.c
+
+
+
+Starer.o: Starer.h Starer.cpp
+
+	$(CXX) -Wall -O3 -c -I$(INC_DIR) Starer.cpp 
+
+
+
+standalone_test.o: standalone_test.cpp
+
+	$(CXX) -Wall -O3 -c standalone_test.cpp 
+
+	
+
+camera_test.o: camera_test.cpp
+
+	$(CXX) -Wall -O3 -c camera_test.cpp 
+
+
+
+
+
+.PHONY: clean
+
+clean:
+
+	rm -f *.o *~ starer_standalone camera_test
