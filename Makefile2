@@ -1,0 +1,226 @@
+# Default compiler settings
+
+COMPILER=gcc
+
+FLAGS=-Wall -g3
+
+INC_DIR=/usr/local/include
+
+LIB_DIR=/usr/local/lib
+
+
+
+# Objects for each program 
+
+GRO_OBJS=groundstation.o
+
+SAT_OBJS=metadata.o elapsed_time.o j2kconverter.o createproduct.o satellite.o
+
+LIN_OBJS=metadata.o elapsed_time.o overlay.o j2kconverter.o createproduct.o standalone_linux.o
+
+ZYN_OBJS=metadata.o elapsed_time.o j2kconverter.o createproduct.o standalone_zynq.o
+
+
+
+# Get parent directory for where to compile executables 
+
+ROOT=$(shell dirname $$(pwd))
+
+GRO_OUT=$(ROOT)/bin/Groundstation/hammerhead_groundstation
+
+SAT_OUT=$(ROOT)/bin/Satellite/hammerhead_satellite
+
+LIN_OUT=$(ROOT)/bin/Standalone/hammerhead_linux
+
+ZYN_OUT=$(ROOT)/bin/Standalone/hammerhead_zynq
+
+
+
+# Change compiler settings if compiling for Zynq board
+
+#Need to run "source /opt/poky/2.1.3/environment<TAB>" before compiling anything for Zynq board 
+
+ifneq (, $(filter $(MAKECMDGOALS), satellite zynq))
+
+	COMPILER=$$CC
+
+	FLAGS=-Wall -O3
+
+	INC_DIR=/opt/poky/2.1.3/sysroots/cortexa9hf-neon-poky-linux-gnueabi/usr/include
+
+	LIB_DIR=/opt/poky/2.1.3/sysroots/cortexa9hf-neon-poky-linux-gnueabi/usr/lib
+
+endif
+
+
+
+
+
+all: 
+
+	make ground
+
+	make linux
+
+	make clean
+
+	make satellite
+
+	make zynq
+
+
+
+ground: $(GRO_OBJS)
+
+	$(COMPILER) $(FLAGS) $(GRO_OBJS) -o $(GRO_OUT) -L$(LIB_DIR) -Wl,-rpath -Wl,/usr/local/lib -lzmq
+
+
+
+satellite: $(SAT_OBJS)
+
+	$(COMPILER) $(FLAGS) $(SAT_OBJS) -o $(SAT_OUT) -L$(LIB_DIR) -lopenjp2 -lcairo -Wl,-rpath -Wl,$(LIB_DIR) -lzmq
+
+
+
+linux: $(LIN_OBJS)
+
+	$(COMPILER) $(FLAGS) $(LIN_OBJS) -o $(LIN_OUT) -L$(LIB_DIR) -lcurl -lopenjp2 -lcairo 
+
+
+
+zynq: $(ZYN_OBJS)
+
+	$(COMPILER) $(FLAGS) $(ZYN_OBJS) -o $(ZYN_OUT) -pthread -L$(LIB_DIR) -lopenjp2 -lcairo 
+
+
+
+
+
+metadata.o: metadata.c metadata.h
+
+	$(COMPILER) $(FLAGS) -c metadata.c
+
+	
+
+elapsed_time.o: elapsed_time.c elapsed_time.h
+
+	$(COMPILER) $(FLAGS) -c elapsed_time.c
+
+
+
+overlay.o: overlay.c overlay.h
+
+	$(COMPILER) $(FLAGS) -c overlay.c
+
+	
+
+j2kconverter.o: j2kconverter.c j2kconverter.h metadata.h
+
+	$(COMPILER) $(FLAGS) -c -I$(INC_DIR) j2kconverter.c
+
+
+
+createproduct.o: createproduct.c createproduct.h metadata.h
+
+	$(COMPILER) $(FLAGS) -c -I$(INC_DIR) createproduct.c 
+
+
+
+groundstation.o: groundstation.c
+
+	$(COMPILER) $(FLAGS) -c -I$(INC_DIR) groundstation.c
+
+
+
+satellite.o: satellite.c
+
+	$(COMPILER) $(FLAGS) -c -I$(INC_DIR) satellite.c
+
+
+
+standalone_linux.o: standalone_linux.c
+
+	$(COMPILER) $(FLAGS) -c standalone_linux.c
+
+
+
+standalone_zynq.o: standalone_zynq.c
+
+	$(COMPILER) $(FLAGS) -c standalone_zynq.c -pthread
+
+
+
+# Will run a standalone version of the linux side (Mainly for tests)
+
+.PHONY: runLinuxStandalone
+
+runLinuxStandalone:
+
+	gnome-terminal --working-directory=$(ROOT)/bin/Standalone/ -x ./hammerhead_linux
+
+
+
+# Will run the groundstation on the linux machine and will open a terminal on the board, scp the files over, and run hammerhead_satellite there
+
+# *Be sure to change the port of the ssh and scp if the board address changes*
+
+.PHONY: runLinuxGround&Sat
+
+runLinuxGroundAndSat:
+
+	scp -r $(ROOT)/bin/Satellite/hammerhead_satellite root@192.168.2.100:/home/root/hammerhead
+
+	gnome-terminal -x ssh -t root@192.168.2.100 "cd /home/root/hammerhead/ && ./hammerhead_satellite; bash"
+
+	gnome-terminal --working-directory=$(ROOT)/bin/Groundstation/ -x ./hammerhead_groundstation
+
+
+
+#Will run a zynq standalone version of hammerhead
+
+.PHONY: runZynqStandalone
+
+runZynqStandalone:
+
+	scp -r $(ROOT)/bin/Standalone/hammerhead_zynq root@192.168.2.100:/home/root/hammerhead
+
+	gnome-terminal -x ssh -t root@192.168.2.100 "cd /home/root/hammerhead/ && ./hammerhead_zynq; bash"
+
+
+
+# Will run the twitterBot on the linux machine and will open a terminal on the board, scp the files over, and run hammerhead_satellite there
+
+# *Be sure to change the port of the ssh and scp if the board address changes*
+
+.PHONY: runTwitterBot
+
+runTwitterBot:
+
+	scp -r $(ROOT)/bin/Satellite/hammerhead_satellite root@192.168.2.100:/home/root/hammerhead
+
+	gnome-terminal -x ssh -t root@192.168.2.100 "cd /home/root/hammerhead/ && ./hammerhead_satellite; bash"
+
+	gnome-terminal --working-directory=$(ROOT)/bin/Groundstation/ -x python2.7 ./twitterBot.py #unset the environment variables first...
+
+
+
+.PHONY: clean
+
+clean:
+
+	rm -f *.o *~ *.pyc *~ \#*\#
+
+
+
+.PHONY: superclean
+
+superclean:
+
+	rm -f *.o *~ *.pyc *~ \#*\#
+
+	rm -f $(ROOT)/bin/Groundstation/hammerhead_groundstation $(ROOT)/bin/Groundstation/*.pyc $(ROOT)/bin/Groundstation/Received/*
+
+	rm -f $(ROOT)/bin/Satellite/hammerhead_satellite $(ROOT)/bin/Satellite/Output/*
+
+	rm -f $(ROOT)/bin/Standalone/hammerhead_linux $(ROOT)/bin/Standalone/hammerhead_zynq $(ROOT)/bin/Standalone/Output/*
+
