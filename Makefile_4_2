@@ -1,0 +1,20 @@
+# Based on info from https://makefiletutorial.com/
+#
+# Example 4.2
+
+# rule definition -
+# target: dependencies
+#		action
+
+# Use wildcards in the target, prerequisites, or commands.
+# Valid wildcards are %, ?, [...]
+
+some_binary: %.c
+	# create the binary
+
+%.c:
+	touch f1.c
+	touch f2.c
+
+clean:
+	rm f1.c f2.c

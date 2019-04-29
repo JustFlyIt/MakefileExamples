@@ -1,0 +1,17 @@
+# Based on info from https://makefiletutorial.com/
+# Example 6.3
+
+# rule definition -
+# target: dependencies
+#		action
+
+foo:=a.o b.o c.o
+bar:=$(foo:.o=.c)
+
+.PHONY: all
+
+all:
+		@echo $(bar)
+
+xxx:
+		@echo $(foo)

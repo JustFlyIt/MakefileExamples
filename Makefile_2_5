@@ -1,0 +1,20 @@
+# Based on info from https://makefiletutorial.com/
+#
+# Example 2.5
+#
+#Example requires: test.c
+#If there is a target that of “.c” file, there is an IMPLICIT COMMAND: “cc -c file.c -o file.o”.
+
+# rule definition -
+# target: dependencies
+#		action
+
+# IMPLICIT COMMAND OF: "cc -c test.c -o test.o"
+# Note: 1) Do not put a comment inside of the test.o rule; the implicit rule will not run!
+#    		2) If there is no test.c file, the implicit rule will not run and will not complain.
+#				3) Compiles but does not link.
+
+test.o:
+
+clean:
+	rm test.o

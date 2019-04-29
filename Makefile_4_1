@@ -1,0 +1,12 @@
+# Based on info from https://makefiletutorial.com/
+#
+# Example 4.1
+
+# rule definition -
+# target: dependencies
+#		action
+
+# Print literal ‘$’
+
+some_binary:
+	echo $$

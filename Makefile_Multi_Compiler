@@ -1,0 +1,14 @@
+# Based on info from https://stackoverflow.com/questions/13358131/one-makefile-for-two-compilers
+#
+
+# rule definition -
+# target: dependencies
+#		action
+
+native: CC=cc
+native:
+    echo $(CC)
+
+cross: CC=arm-linux-gnueabihf-g++
+cross:
+    echo $(CC)
